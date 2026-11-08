@@ -1,35 +1,37 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { mockMembers } from "@/lib/mockData";
-import { ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { mockMembers, mockLoans, mockReservations } from "@/lib/mockData";
+import { ChevronRight, Plus } from "lucide-react";
 
 export default function Members() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("alle");
+  const [roleFilter, setRoleFilter] = useState("alle");
   const [sortBy, setSortBy] = useState("navn");
-  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [stats, setStats] = useState({
     total: 0,
     aktive: 0,
-    inaktive: 0,
-    nye: 0,
+    aktiveLån: 0,
+    aktiveReservationer: 0,
+    mestAktiv: "",
   });
 
   useEffect(() => {
     const aktive = mockMembers.filter((m) => m.status === "aktiv").length;
-    const inaktive = mockMembers.filter((m) => m.status === "inaktiv").length;
-    const nye = mockMembers.filter(
-      (m) =>
-        new Date(m.tilmeldingsdato) >
-        new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-    ).length;
+    const aktiveLån = mockLoans.length;
+    const aktiveReservationer = mockReservations.length;
+    const mestAktiv = mockMembers.reduce((max, m) =>
+      m.aktiveLån + m.aktivtReservationer > max.aktiveLån + max.aktivtReservationer ? m : max
+    );
 
     setStats({
       total: mockMembers.length,
       aktive,
-      inaktive,
-      nye,
+      aktiveLån,
+      aktiveReservationer,
+      mestAktiv: mestAktiv.name,
     });
   }, []);
 
@@ -40,10 +42,9 @@ export default function Members() {
         member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         member.telefon.includes(searchTerm);
 
-      const matchesStatus =
-        statusFilter === "alle" || member.status === statusFilter;
+      const matchesRole = roleFilter === "alle" || member.rolle === roleFilter;
 
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesRole;
     });
 
     filtered.sort((a, b) => {
@@ -51,6 +52,8 @@ export default function Members() {
         return a.name.localeCompare(b.name);
       } else if (sortBy === "tilmelding") {
         return new Date(b.tilmeldingsdato).getTime() - new Date(a.tilmeldingsdato).getTime();
+      } else if (sortBy === "rolle") {
+        return a.rolle.localeCompare(b.rolle);
       } else if (sortBy === "seneste") {
         return new Date(b.senessteAktivitet).getTime() - new Date(a.senessteAktivitet).getTime();
       }
@@ -58,20 +61,50 @@ export default function Members() {
     });
 
     return filtered;
-  }, [searchTerm, statusFilter, sortBy]);
+  }, [searchTerm, roleFilter, sortBy]);
+
+  const getRoleBadgeColor = (rolle: string) => {
+    switch (rolle) {
+      case "Admin":
+        return "bg-red-100 text-red-800";
+      case "Familie":
+        return "bg-blue-100 text-blue-800";
+      case "Medlem":
+        return "bg-green-100 text-green-800";
+      case "Gæst":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    return status === "aktiv" ? "text-green-600" : "text-gray-500";
+  };
 
   return (
     <div className="space-y-6 pb-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Medlemmer</h1>
-        <p className="text-gray-600 mt-1">Administrer portal medlemmer</p>
+      {/* Header with Create Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Medlemmer</h1>
+          <p className="text-gray-600 mt-1">Administrer portal medlemmer</p>
+        </div>
+        <button
+          onClick={() => router.push("/members/new")}
+          className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
+        >
+          <Plus className="w-5 h-5" />
+          <span>Opret medlem</span>
+        </button>
       </div>
 
+      {/* Dashboard Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Samtlige medlemmer</p>
+              <p className="text-gray-600 text-sm font-medium">Total medlemmer</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</p>
             </div>
             <div className="text-4xl">👥</div>
@@ -81,34 +114,35 @@ export default function Members() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Aktive medlemmer</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">{stats.aktive}</p>
+              <p className="text-gray-600 text-sm font-medium">Aktive lån</p>
+              <p className="text-3xl font-bold text-orange-600 mt-2">{stats.aktiveLån}</p>
             </div>
-            <div className="text-4xl">✅</div>
+            <div className="text-4xl">📤</div>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Inaktive medlemmer</p>
-              <p className="text-3xl font-bold text-gray-600 mt-2">{stats.inaktive}</p>
+              <p className="text-gray-600 text-sm font-medium">Aktive reservationer</p>
+              <p className="text-3xl font-bold text-purple-600 mt-2">{stats.aktiveReservationer}</p>
             </div>
-            <div className="text-4xl">⏸️</div>
+            <div className="text-4xl">📋</div>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Nye denne måned</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{stats.nye}</p>
+              <p className="text-gray-600 text-sm font-medium">Mest aktiv medlem</p>
+              <p className="text-sm font-bold text-blue-600 mt-2 truncate">{stats.mestAktiv}</p>
             </div>
             <div className="text-4xl">⭐</div>
           </div>
         </div>
       </div>
 
+      {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow p-6 space-y-6">
         <div className="flex flex-col gap-4">
           <div>
@@ -127,22 +161,20 @@ export default function Members() {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
+                Rolle
               </label>
-              <div className="flex gap-2">
-                {["alle", "aktiv", "inaktiv"].map((status) => (
+              <div className="flex gap-2 flex-wrap">
+                {["alle", "Admin", "Familie", "Medlem", "Gæst"].map((role) => (
                   <button
-                    key={status}
-                    onClick={() => setStatusFilter(status)}
+                    key={role}
+                    onClick={() => setRoleFilter(role)}
                     className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
-                      statusFilter === status
+                      roleFilter === role
                         ? "bg-blue-600 text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
-                    {status === "alle" && "Alle"}
-                    {status === "aktiv" && "Aktive"}
-                    {status === "inaktiv" && "Inaktive"}
+                    {role === "alle" ? "Alle" : role}
                   </button>
                 ))}
               </div>
@@ -159,12 +191,14 @@ export default function Members() {
               >
                 <option value="navn">Navn (A-Z)</option>
                 <option value="tilmelding">Nyeste medlemmer</option>
+                <option value="rolle">Rolle</option>
                 <option value="seneste">Seneste aktivitet</option>
               </select>
             </div>
           </div>
         </div>
 
+        {/* Members List */}
         <div className="space-y-3">
           {filteredAndSortedMembers.length === 0 ? (
             <div className="text-center py-12">
@@ -172,95 +206,44 @@ export default function Members() {
             </div>
           ) : (
             filteredAndSortedMembers.map((member) => (
-              <div
+              <button
                 key={member.id}
-                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
+                onClick={() => router.push(`/members/${member.id}`)}
+                className="w-full text-left border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition group"
               >
-                <button
-                  onClick={() =>
-                    setExpandedId(expandedId === member.id ? null : member.id)
-                  }
-                  className="w-full text-left flex items-start justify-between"
-                >
+                <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4 flex-1 min-w-0">
                     <div className="text-3xl flex-shrink-0">{member.avatar}</div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900 truncate">
-                        {member.name}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        {member.email}
-                      </p>
-                      <div className="flex gap-2 mt-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-gray-900">{member.name}</p>
                         <span
-                          className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                            member.status === "aktiv"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
+                          className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${getRoleBadgeColor(
+                            member.rolle
+                          )}`}
                         >
-                          {member.status === "aktiv" ? "Aktiv" : "Inaktiv"}
+                          {member.rolle}
                         </span>
-                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                          {member.udlån} udlån
+                        <span className={`text-xs font-medium ${getStatusColor(member.status)}`}>
+                          {member.status === "aktiv" ? "✓ Aktiv" : "Inaktiv"}
                         </span>
                       </div>
-                    </div>
-                  </div>
-                  <div className={`flex-shrink-0 ml-4 transition transform ${
-                    expandedId === member.id ? "rotate-180" : ""
-                  }`}>
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  </div>
-                </button>
-
-                {expandedId === member.id && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase">
-                          Telefon
-                        </p>
-                        <p className="text-sm text-gray-900 mt-1">{member.telefon}</p>
+                      <div className="mt-2 space-y-1">
+                        <p className="text-sm text-gray-600 truncate">📧 {member.email}</p>
+                        <p className="text-sm text-gray-600 truncate">📞 {member.telefon}</p>
+                        <p className="text-sm text-gray-600 truncate">📍 {member.adresse}</p>
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase">
-                          Tilmeldingsdato
-                        </p>
-                        <p className="text-sm text-gray-900 mt-1">
-                          {new Date(member.tilmeldingsdato).toLocaleDateString("da-DK")}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase">
-                          Seneste aktivitet
-                        </p>
-                        <p className="text-sm text-gray-900 mt-1">
-                          {new Date(member.senessteAktivitet).toLocaleDateString("da-DK")}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 uppercase">
-                          Aktive udlån
-                        </p>
-                        <p className="text-sm text-gray-900 mt-1">{member.udlån}</p>
+                      <div className="mt-2 flex gap-4 text-xs text-gray-500">
+                        <span>📤 {member.aktiveLån} lån</span>
+                        <span>📋 {member.aktivtReservationer} res.</span>
                       </div>
                     </div>
-
-                    <div className="flex gap-2 pt-2">
-                      <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition">
-                        Se detaljer
-                      </button>
-                      <button className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 px-3 py-2 rounded-lg text-sm font-medium transition">
-                        Redigér
-                      </button>
-                      <button className="flex-1 bg-red-100 hover:bg-red-200 text-red-800 px-3 py-2 rounded-lg text-sm font-medium transition">
-                        Deaktivér
-                      </button>
-                    </div>
                   </div>
-                )}
-              </div>
+                  <div className="flex-shrink-0 ml-4 text-gray-400 group-hover:text-gray-600 transition">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                </div>
+              </button>
             ))
           )}
         </div>
