@@ -22,11 +22,18 @@ export const mockInventoryItems = [
 ];
 
 export const mockLoans = [
-  { id: 1, item: "Projektor", medlem: "Anders Hansen", fra: "2024-11-01", til: "2024-11-08", status: "forfalden" },
-  { id: 2, item: "Laptop", medlem: "Marie Andersen", fra: "2024-11-05", til: "2024-11-12", status: "snartForfalden" },
-  { id: 3, item: "Stol", medlem: "Peter Nielsen", fra: "2024-11-03", til: "2024-11-17", status: "aktiv" },
-  { id: 4, item: "Højtaler", medlem: "Søren Larsen", fra: "2024-11-06", til: "2024-11-13", status: "snartForfalden" },
-  { id: 5, item: "Kabel HDMI", medlem: "Lisa Jensen", fra: "2024-11-07", til: "2024-11-21", status: "aktiv" },
+  { id: 1, item: "Projektor", itemId: 1, billede: "🎬", kategori: "Elektronik", medlem: "Anders Hansen", telefon: "40 12 34 56", fra: "2024-10-25", til: "2024-11-08", status: "forfalden" },
+  { id: 2, item: "Laptop Dell XPS", itemId: 4, billede: "💻", kategori: "Elektronik", medlem: "Marie Andersen", telefon: "30 45 67 89", fra: "2024-11-02", til: "2024-11-12", status: "snartForfalden" },
+  { id: 3, item: "Stol ergonomisk", itemId: 3, billede: "🪑", kategori: "Møbler", medlem: "Peter Nielsen", telefon: "20 98 76 54", fra: "2024-10-28", til: "2024-11-25", status: "aktiv" },
+  { id: 4, item: "Højtaler Bose", itemId: 8, billede: "🔊", kategori: "Elektronik", medlem: "Søren Larsen", telefon: "50 11 22 33", fra: "2024-11-01", til: "2024-11-13", status: "snartForfalden" },
+  { id: 5, item: "Kabel HDMI 2m", itemId: 6, billede: "🔌", kategori: "Tilbehør", medlem: "Lisa Jensen", telefon: "60 99 88 77", fra: "2024-11-05", til: "2024-11-26", status: "aktiv" },
+  { id: 6, item: "Lighting kit 3x", itemId: 13, billede: "💡", kategori: "Elektronik", medlem: "Thomas Christensen", telefon: "40 55 66 77", fra: "2024-11-04", til: "2024-11-11", status: "snartForfalden" },
+  { id: 7, item: "Mikrofon Shure", itemId: 7, billede: "🎤", kategori: "Elektronik", medlem: "Ingrid Østergaard", telefon: "22 33 44 55", fra: "2024-11-06", til: "2024-11-27", status: "aktiv" },
+  { id: 8, item: "Kamera Sony A6400", itemId: 11, billede: "📷", kategori: "Elektronik", medlem: "Johannes Møller", telefon: "45 77 88 99", fra: "2024-10-30", til: "2024-11-09", status: "forfalden" },
+  { id: 9, item: "Tripod aluminium", itemId: 12, billede: "🦵", kategori: "Møbler", medlem: "Anna Bergström", telefon: "38 22 11 44", fra: "2024-11-01", til: "2024-11-18", status: "aktiv" },
+  { id: 10, item: "USB-C Adapter", itemId: 10, billede: "🔋", kategori: "Tilbehør", medlem: "Rasmus Andersen", telefon: "55 66 77 88", fra: "2024-10-29", til: "2024-11-10", status: "snartForfalden" },
+  { id: 11, item: "Monitor arm", itemId: 17, billede: "⚙️", kategori: "Tilbehør", medlem: "Henrik Nielsen", telefon: "35 42 58 67", fra: "2024-11-03", til: "2024-11-24", status: "aktiv" },
+  { id: 12, item: "Whiteboard 1x2m", itemId: 2, billede: "📋", kategori: "Møbler", medlem: "Sandra Larsen", telefon: "44 55 66 77", fra: "2024-10-26", til: "2024-11-06", status: "forfalden" },
 ];
 
 export const mockReservations = [
