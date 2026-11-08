@@ -22,18 +22,18 @@ export function Sidebar() {
       {/* Mobile menu button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-40 p-2 hover:bg-gray-100 rounded-lg"
+        className="md:hidden fixed top-4 left-4 z-40 p-2 hover:bg-muted rounded-lg transition-colors"
       >
         {isOpen ? (
-          <X className="w-6 h-6" />
+          <X className="w-6 h-6 text-foreground" />
         ) : (
-          <Menu className="w-6 h-6" />
+          <Menu className="w-6 h-6 text-foreground" />
         )}
       </button>
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-slate-900 text-white overflow-y-auto transition-transform duration-300 md:translate-x-0 z-30 ${
+        className={`fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-sidebar text-sidebar-foreground overflow-y-auto transition-transform duration-300 md:translate-x-0 z-30 border-r border-sidebar-border ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -45,10 +45,10 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                   isActive
-                    ? "bg-slate-700 text-white"
-                    : "text-gray-300 hover:bg-slate-800"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-sm"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                 }`}
                 onClick={() => setIsOpen(false)}
               >

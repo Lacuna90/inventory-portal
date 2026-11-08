@@ -26,15 +26,15 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Velkommen til Inventar Portal</p>
+          <h1 className="text-4xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-2">Velkommen til Inventar Portal</p>
         </div>
         <button
           onClick={() => setShowPreferences(!showPreferences)}
-          className="inline-flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-900 px-4 py-2 rounded-lg font-medium transition-colors w-full sm:w-auto"
+          className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:opacity-90 px-4 py-2 rounded-lg font-medium transition-opacity w-full sm:w-auto"
         >
           <Settings className="w-5 h-5" />
           <span>Tilpas dashboard</span>
@@ -43,8 +43,8 @@ export default function Dashboard() {
 
       {/* Preferences Panel */}
       {showPreferences && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-4">
-          <h2 className="font-semibold text-gray-900">Vælg widgets</h2>
+        <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 space-y-4">
+          <h2 className="font-semibold text-foreground">Vælg widgets</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {dashboardPreferences.widgets.map((widget) => (
               <label key={widget.id} className="flex items-center gap-3 cursor-pointer">
@@ -54,13 +54,13 @@ export default function Dashboard() {
                   onChange={() => toggleWidget(widget.id)}
                   className="w-4 h-4 rounded"
                 />
-                <span className="text-sm text-gray-700">{widget.label}</span>
+                <span className="text-sm text-foreground">{widget.label}</span>
               </label>
             ))}
           </div>
           <button
             onClick={() => setShowPreferences(false)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="bg-primary text-primary-foreground hover:opacity-90 px-4 py-2 rounded-lg text-sm font-medium transition-opacity"
           >
             Lukk
           </button>
@@ -73,13 +73,11 @@ export default function Dashboard() {
         getWidgetStatus("udlånt") ||
         getWidgetStatus("reserveret") ||
         getWidgetStatus("tilSalg")) && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {getWidgetStatus("totalInventar") && (
             <StatCard
               title="I alt"
               value={dashboardStats.totalItems}
-              color="bg-blue-50"
-              textColor="text-blue-600"
               icon="📦"
             />
           )}
@@ -87,8 +85,6 @@ export default function Dashboard() {
             <StatCard
               title="Hjemme"
               value={dashboardStats.itemsHome}
-              color="bg-green-50"
-              textColor="text-green-600"
               icon="🏠"
             />
           )}
@@ -96,8 +92,6 @@ export default function Dashboard() {
             <StatCard
               title="Udlånt"
               value={dashboardStats.itemsLoaned}
-              color="bg-orange-50"
-              textColor="text-orange-600"
               icon="📤"
             />
           )}
@@ -105,8 +99,6 @@ export default function Dashboard() {
             <StatCard
               title="Reserveret"
               value={dashboardStats.itemsReserved}
-              color="bg-purple-50"
-              textColor="text-purple-600"
               icon="📋"
             />
           )}
@@ -114,8 +106,6 @@ export default function Dashboard() {
             <StatCard
               title="Til salg"
               value={dashboardStats.itemsForSale}
-              color="bg-red-50"
-              textColor="text-red-600"
               icon="💰"
             />
           )}
@@ -127,31 +117,31 @@ export default function Dashboard() {
         {/* Left column - full width on mobile, 2 cols on desktop */}
         <div className="lg:col-span-2 space-y-6">
           {/* Udlånt lige nu - always shown */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <div className="bg-card rounded-lg shadow p-6 border border-border">
+            <h2 className="text-xl font-bold text-foreground mb-6">
               Udlånt lige nu
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {mockLoans.length > 0 ? (
                 mockLoans.map((loan) => (
                   <div
                     key={loan.id}
-                    className="flex justify-between items-start p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+                    className="flex justify-between items-start p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
                   >
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{loan.item}</p>
-                      <p className="text-sm text-gray-600">{loan.medlem}</p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="font-semibold text-foreground">{loan.item}</p>
+                      <p className="text-sm text-muted-foreground">{loan.medlem}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
                         Retur: {loan.til}
                       </p>
                     </div>
                     <span
-                      className={`text-xs font-semibold px-2 py-1 rounded whitespace-nowrap ml-2 ${
+                      className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ml-2 ${
                         loan.status === "forfalden"
-                          ? "bg-red-100 text-red-800"
+                          ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
                           : loan.status === "snartForfalden"
-                            ? "bg-orange-100 text-orange-800"
-                            : "bg-green-100 text-green-800"
+                            ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
+                            : "bg-primary/20 text-primary"
                       }`}
                     >
                       {loan.status === "forfalden"
@@ -163,34 +153,34 @@ export default function Dashboard() {
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 text-sm">Ingen aktive udlån</p>
+                <p className="text-muted-foreground text-sm py-4">Ingen aktive udlån</p>
               )}
             </div>
           </div>
 
           {/* Skal snart retur */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <div className="bg-card rounded-lg shadow p-6 border border-border">
+            <h2 className="text-xl font-bold text-foreground mb-6">
               Skal snart retur
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {loansExpiringSoon.length > 0 ? (
                 loansExpiringSoon.map((loan) => (
                   <div
                     key={loan.id}
-                    className="flex justify-between items-center p-3 bg-orange-50 rounded border border-orange-200"
+                    className="flex justify-between items-center p-4 bg-secondary/10 rounded-lg border border-secondary/20"
                   >
                     <div>
-                      <p className="font-medium text-gray-900">{loan.item}</p>
-                      <p className="text-sm text-gray-600">{loan.medlem}</p>
+                      <p className="font-semibold text-foreground">{loan.item}</p>
+                      <p className="text-sm text-muted-foreground">{loan.medlem}</p>
                     </div>
-                    <span className="text-xs font-semibold bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                    <span className="text-xs font-bold bg-secondary/20 text-secondary px-3 py-1 rounded-full">
                       {loan.til}
                     </span>
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 text-sm">Ingen items der snart forfalde</p>
+                <p className="text-muted-foreground text-sm py-4">Ingen items der snart forfalde</p>
               )}
             </div>
           </div>
@@ -198,27 +188,15 @@ export default function Dashboard() {
 
         {/* Right column - Seneste aktivitet */}
         {getWidgetStatus("senessteAktivitet") && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <div className="bg-card rounded-lg shadow p-6 border border-border">
+            <h2 className="text-xl font-bold text-foreground mb-6">
               Seneste aktivitet
             </h2>
             <div className="space-y-3">
               {mockActivity.map((activity) => (
-                <div key={activity.id} className="border-l-4 border-gray-200 pl-3 py-2">
-                  <div className="flex gap-2">
-                    <span className="text-lg">{activity.ikon}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {activity.item}
-                      </p>
-                      <p className="text-xs text-gray-600 truncate">
-                        {activity.medlem}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {activity.tidspunkt}
-                      </p>
-                    </div>
-                  </div>
+                <div key={activity.id} className="border-l-2 border-primary/30 pl-4 py-2">
+                  <p className="text-sm font-medium text-foreground">{activity.type}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{activity.tidspunkt}</p>
                 </div>
               ))}
             </div>
@@ -226,59 +204,25 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Top 10 Most Borrowed Items */}
+      {/* Top Borrowed Items */}
       {getWidgetStatus("topUdlånte") && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Top 10 mest udlånte genstande
+        <div className="bg-card rounded-lg shadow p-6 border border-border">
+          <h2 className="text-xl font-bold text-foreground mb-6">
+            Top udlånte enheder
           </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-900">
-                    Rank
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-900">
-                    Genstand
-                  </th>
-                  <th className="px-4 py-2 text-center text-xs font-semibold text-gray-900">
-                    Gange udlånt
-                  </th>
-                  <th className="px-4 py-2 text-center text-xs font-semibold text-gray-900">
-                    Hjemme
-                  </th>
-                  <th className="px-4 py-2 text-center text-xs font-semibold text-gray-900">
-                    Udlånt
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {topBorrowedItems.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      <span className="font-bold text-lg text-gray-400">
-                        {index + 1}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                      {item.name}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-center">
-                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-semibold">
-                        {item.lånCount}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-center text-green-600 font-medium">
-                      {item.mængdeHjemme}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-center text-orange-600 font-medium">
-                      {item.mængdeUdlånt}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {topBorrowedItems.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg"
+              >
+                <span className="text-3xl">{item.billede}</span>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">{item.name}</p>
+                  <p className="text-sm text-muted-foreground">{item.lånCount} gange lånt</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -286,26 +230,14 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({
-  title,
-  value,
-  color,
-  textColor,
-  icon,
-}: {
-  title: string;
-  value: number;
-  color: string;
-  textColor: string;
-  icon: string;
-}) {
+function StatCard({ title, value, icon }: any) {
   return (
-    <div className={`${color} rounded-lg p-4 md:p-6`}>
-      <div className="text-2xl md:text-3xl mb-2">{icon}</div>
-      <p className="text-xs md:text-sm font-medium text-gray-700">{title}</p>
-      <p className={`text-2xl md:text-3xl font-bold ${textColor} mt-1`}>
-        {value}
-      </p>
+    <div className="bg-card rounded-lg shadow p-6 border border-border hover:shadow-lg transition-shadow">
+      <div className="space-y-2">
+        <div className="text-4xl">{icon}</div>
+        <p className="text-sm text-muted-foreground font-medium uppercase">{title}</p>
+        <p className="text-3xl font-bold text-foreground">{value}</p>
+      </div>
     </div>
   );
 }

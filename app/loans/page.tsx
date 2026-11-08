@@ -9,15 +9,15 @@ type FilterType = "alle" | "aktive" | "forsinkede" | "denne_uge";
 type SortType = "navn" | "retur" | "dage";
 
 function getStatusColor(daysLeft: number): string {
-  if (daysLeft < 0) return "bg-red-50 border-red-200";
-  if (daysLeft <= 7) return "bg-yellow-50 border-yellow-200";
-  return "bg-green-50 border-green-200";
+  if (daysLeft < 0) return "bg-destructive/5 border-destructive/20";
+  if (daysLeft <= 7) return "bg-yellow-500/5 border-yellow-500/20";
+  return "bg-green-500/5 border-green-500/20";
 }
 
 function getStatusBadgeColor(daysLeft: number): string {
-  if (daysLeft < 0) return "bg-red-100 text-red-800";
-  if (daysLeft <= 7) return "bg-yellow-100 text-yellow-800";
-  return "bg-green-100 text-green-800";
+  if (daysLeft < 0) return "bg-destructive/10 text-destructive dark:text-red-400";
+  if (daysLeft <= 7) return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400";
+  return "bg-green-500/10 text-green-700 dark:text-green-400";
 }
 
 function getStatusLabel(daysLeft: number): string {
@@ -101,8 +101,8 @@ export default function Loans() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Udlån</h1>
-        <p className="text-gray-600 mt-1">Administrer udlånte genstande</p>
+        <h1 className="text-3xl font-bold text-foreground">Udlån</h1>
+        <p className="text-muted-foreground mt-1">Administrer udlånte genstande</p>
       </div>
 
       {/* Dashboard Stats */}
@@ -111,34 +111,34 @@ export default function Loans() {
           icon="📤"
           title="Aktive udlån"
           value={stats.aktive}
-          color="bg-blue-50"
-          textColor="text-blue-600"
+          color="bg-blue-500/10"
+          textColor="text-blue-600 dark:text-blue-400"
         />
         <StatCard
           icon="⚠️"
           title="Forsinkede udlån"
           value={stats.forsinkede}
-          color="bg-red-50"
-          textColor="text-red-600"
+          color="bg-red-500/10"
+          textColor="text-red-600 dark:text-red-400"
         />
         <StatCard
           icon="📅"
           title="Returneres denne uge"
           value={stats.denneUge}
-          color="bg-orange-50"
-          textColor="text-orange-600"
+          color="bg-orange-500/10"
+          textColor="text-orange-600 dark:text-orange-400"
         />
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
         <input
           type="text"
           placeholder="Søg efter enhed, låner eller kategori..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-10 pr-4 py-2 border border-border bg-card text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground"
         />
       </div>
 
@@ -152,8 +152,8 @@ export default function Loans() {
                 onClick={() => setFilter(f)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   filter === f
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                    ? "bg-primary text-white"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
                 {f === "alle"
@@ -172,20 +172,20 @@ export default function Loans() {
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortType)}
-            className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pr-10"
+            className="px-4 py-2 border border-border bg-card text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-10"
           >
             <option value="retur">Sorter efter returdato</option>
             <option value="navn">Sorter efter navn</option>
             <option value="dage">Sorter efter dage tilbage</option>
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         </div>
       </div>
 
       {/* Loans List */}
       {filteredAndSorted.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <p className="text-gray-600">Ingen udlån fundet</p>
+        <div className="text-center py-12 bg-card rounded-lg border border-border">
+          <p className="text-muted-foreground">Ingen udlån fundet</p>
         </div>
       ) : (
         <div className="space-y-3 md:space-y-0">
@@ -217,7 +217,7 @@ function LoanCard({
   return (
     <Link href={`/inventory/${loan.itemId}`}>
       <div
-        className={`bg-white rounded-lg shadow border p-4 md:p-6 transition-all hover:shadow-lg hover:scale-[1.01] cursor-pointer ${getStatusColor(
+        className={`bg-card rounded-lg shadow border p-4 md:p-6 transition-all hover:shadow-lg hover:scale-[1.01] cursor-pointer ${getStatusColor(
           loan.daysLeft
         )}`}
       >
@@ -226,26 +226,26 @@ function LoanCard({
           <div className="flex items-start gap-3 md:col-span-1">
             <span className="text-4xl">{loan.billede}</span>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 line-clamp-2">
+              <h3 className="font-semibold text-foreground line-clamp-2">
                 {loan.item}
               </h3>
-              <p className="text-xs text-gray-500">{loan.kategori}</p>
+              <p className="text-xs text-muted-foreground">{loan.kategori}</p>
             </div>
           </div>
 
           {/* Låner Info */}
           <div className="hidden md:block">
-            <p className="font-medium text-gray-900">{loan.medlem}</p>
-            <p className="text-sm text-gray-600">{loan.telefon}</p>
+            <p className="font-medium text-foreground">{loan.medlem}</p>
+            <p className="text-sm text-muted-foreground">{loan.telefon}</p>
           </div>
 
           {/* Datoer */}
           <div className="hidden lg:block text-sm">
-            <p className="text-gray-600">
-              Start: <span className="font-medium text-gray-900">{loan.fra}</span>
+            <p className="text-muted-foreground">
+              Start: <span className="font-medium text-foreground">{loan.fra}</span>
             </p>
-            <p className="text-gray-600">
-              Retur: <span className="font-medium text-gray-900">{loan.til}</span>
+            <p className="text-muted-foreground">
+              Retur: <span className="font-medium text-foreground">{loan.til}</span>
             </p>
           </div>
 
@@ -268,11 +268,11 @@ function LoanCard({
                 e.stopPropagation();
                 onToggle();
               }}
-              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
               title="Flere handlinger"
             >
               <ChevronDown
-                className={`w-5 h-5 text-gray-600 transition-transform ${
+                className={`w-5 h-5 text-muted-foreground transition-transform ${
                   isExpanded ? "rotate-180" : ""
                 }`}
               />
@@ -281,17 +281,17 @@ function LoanCard({
         </div>
 
         {/* Mobile Info (visible on mobile) */}
-        <div className="md:hidden mt-4 pt-4 border-t space-y-2 text-sm">
+        <div className="md:hidden mt-4 pt-4 border-t border-border space-y-2 text-sm">
           <div>
-            <p className="text-gray-600">Låner: {loan.medlem}</p>
-            <p className="text-gray-600">Telefon: {loan.telefon}</p>
+            <p className="text-muted-foreground">Låner: {loan.medlem}</p>
+            <p className="text-muted-foreground">Telefon: {loan.telefon}</p>
           </div>
           <div>
-            <p className="text-gray-600">
-              Startdato: <span className="font-medium">{loan.fra}</span>
+            <p className="text-muted-foreground">
+              Startdato: <span className="font-medium text-foreground">{loan.fra}</span>
             </p>
-            <p className="text-gray-600">
-              Returdato: <span className="font-medium">{loan.til}</span>
+            <p className="text-muted-foreground">
+              Returdato: <span className="font-medium text-foreground">{loan.til}</span>
             </p>
           </div>
         </div>
@@ -299,21 +299,21 @@ function LoanCard({
         {/* Expanded Actions */}
         {isExpanded && (
           <div
-            className="mt-4 pt-4 border-t flex flex-col md:flex-row gap-2"
+            className="mt-4 pt-4 border-t border-border flex flex-col md:flex-row gap-2"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
             }}
           >
-            <button className="flex-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+            <button className="flex-1 px-4 py-2 bg-primary/10 text-primary dark:text-primary/80 rounded-lg hover:bg-primary/20 transition-colors text-sm font-medium flex items-center justify-center gap-2">
               <AlertCircle className="w-4 h-4" />
               Se detaljer
             </button>
-            <button className="flex-1 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+            <button className="flex-1 px-4 py-2 bg-green-500/10 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-500/20 transition-colors text-sm font-medium flex items-center justify-center gap-2">
               <CheckCircle2 className="w-4 h-4" />
               Returner enhed
             </button>
-            <button className="flex-1 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+            <button className="flex-1 px-4 py-2 bg-orange-500/10 text-orange-700 dark:text-orange-400 rounded-lg hover:bg-orange-500/20 transition-colors text-sm font-medium flex items-center justify-center gap-2">
               <RotateCcw className="w-4 h-4" />
               Forlæng udlån
             </button>
@@ -338,10 +338,10 @@ function StatCard({
   textColor: string;
 }) {
   return (
-    <div className={`${color} rounded-lg p-6`}>
+    <div className={`${color} rounded-lg p-6 bg-card border border-border`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-700">{title}</p>
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
           <p className={`text-3xl font-bold ${textColor} mt-2`}>{value}</p>
         </div>
         <span className="text-4xl">{icon}</span>
