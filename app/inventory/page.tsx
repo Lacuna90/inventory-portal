@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { mockInventoryItems } from "@/lib/mockData";
-import { Grid, List, Search, X } from "lucide-react";
+import { Grid, List, Search, X, Plus } from "lucide-react";
 
 type ViewType = "card" | "list";
 type StatusFilter = "alle" | "hjemme" | "udlånt" | "reserveret" | "til_salg" | "solgt" | "defekt";
@@ -17,6 +18,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 };
 
 export default function Inventory() {
+  const router = useRouter();
   const [view, setView] = useState<ViewType>("card");
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<StatusFilter>("alle");
@@ -39,10 +41,19 @@ export default function Inventory() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Inventar</h1>
-        <p className="text-gray-600 mt-1">Oversigt over alle inventargenstande</p>
+      {/* Header with Create Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Inventar</h1>
+          <p className="text-gray-600 mt-1">Oversigt over alle inventargenstande</p>
+        </div>
+        <button
+          onClick={() => router.push("/inventory/new")}
+          className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
+        >
+          <Plus className="w-5 h-5" />
+          <span>Opret enhed</span>
+        </button>
       </div>
 
       {/* Search Bar */}

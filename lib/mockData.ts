@@ -37,17 +37,38 @@ export const mockLoans = [
 ];
 
 export const mockReservations = [
-  { id: 1, item: "Projektor", medlem: "Søren Larsen", dato: "2024-11-15" },
-  { id: 2, item: "Whiteboard", medlem: "Lisa Jensen", dato: "2024-11-12" },
-  { id: 3, item: "Laptop", medlem: "Thomas Christensen", dato: "2024-11-18" },
+  { id: 1, item: "Projektor", itemId: 1, billede: "🎬", kategori: "Elektronik", medlem: "Søren Larsen", startdato: "2024-11-10", slutdato: "2024-11-14", status: "kommende" },
+  { id: 2, item: "Whiteboard 1x2m", itemId: 2, billede: "📋", kategori: "Møbler", medlem: "Lisa Jensen", startdato: "2024-11-08", slutdato: "2024-11-12", status: "aktiv" },
+  { id: 3, item: "Laptop Dell XPS", itemId: 4, billede: "💻", kategori: "Elektronik", medlem: "Thomas Christensen", startdato: "2024-11-12", slutdato: "2024-11-16", status: "kommende" },
+  { id: 4, item: "Kamera Sony A6400", itemId: 11, billede: "📷", kategori: "Elektronik", medlem: "Henrik Nielsen", startdato: "2024-11-15", slutdato: "2024-11-22", status: "kommende" },
+  { id: 5, item: "Højtaler Bose", itemId: 8, billede: "🔊", kategori: "Elektronik", medlem: "Anna Bergström", startdato: "2024-11-09", slutdato: "2024-11-11", status: "aktiv" },
+  { id: 6, item: "Stol ergonomisk", itemId: 3, billede: "🪑", kategori: "Møbler", medlem: "Johannes Møller", startdato: "2024-11-18", slutdato: "2024-11-25", status: "kommende" },
+  { id: 7, item: "Tripod aluminium", itemId: 12, billede: "🦵", kategori: "Møbler", medlem: "Ingrid Østergaard", startdato: "2024-11-11", slutdato: "2024-11-13", status: "aktiv" },
+  { id: 8, item: "Mikrofon Shure", itemId: 7, billede: "🎤", kategori: "Elektronik", medlem: "Rasmus Andersen", startdato: "2024-11-20", slutdato: "2024-11-27", status: "kommende" },
+  { id: 9, item: "Lighting kit 3x", itemId: 13, billede: "💡", kategori: "Elektronik", medlem: "Sandra Larsen", startdato: "2024-11-17", slutdato: "2024-11-19", status: "kommende" },
+  { id: 10, item: "Skærm LG 27\"", itemId: 5, billede: "🖥️", kategori: "Elektronik", medlem: "Marie Andersen", startdato: "2024-11-21", slutdato: "2024-11-28", status: "kommende" },
+  { id: 11, item: "Monitor arm", itemId: 17, billede: "⚙️", kategori: "Tilbehør", medlem: "Peter Nielsen", startdato: "2024-10-28", slutdato: "2024-11-05", status: "udløbet" },
+  { id: 12, item: "Kabel HDMI 2m", itemId: 6, billede: "🔌", kategori: "Tilbehør", medlem: "Anders Hansen", startdato: "2024-11-06", slutdato: "2024-11-07", status: "udløbet" },
+  { id: 13, item: "USB-C Adapter", itemId: 10, billede: "🔋", kategori: "Tilbehør", medlem: "Thomas Christensen", startdato: "2024-11-25", slutdato: "2024-11-29", status: "kommende" },
+  { id: 14, item: "Keyboard mekanisk", itemId: 19, billede: "⌨️", kategori: "Elektronik", medlem: "Henrik Nielsen", startdato: "2024-11-13", slutdato: "2024-11-15", status: "kommende" },
+  { id: 15, item: "Mus logitech MX", itemId: 20, billede: "🖱️", kategori: "Elektronik", medlem: "Lisa Jensen", startdato: "2024-11-14", slutdato: "2024-11-17", status: "kommende" },
+  { id: 16, item: "Projektor fjernbetjening", itemId: 9, billede: "📡", kategori: "Tilbehør", medlem: "Søren Larsen", startdato: "2024-11-10", slutdato: "2024-11-14", status: "kommende" },
+  { id: 17, item: "Skrivebord 120x60cm", itemId: 16, billede: "🛠️", kategori: "Møbler", medlem: "Anna Bergström", startdato: "2024-11-08", slutdato: "2024-11-10", status: "aktiv" },
 ];
 
 export const mockMembers = [
-  { id: 1, name: "Anders Hansen", email: "anders@example.com", medlemskat: "aktiv" },
-  { id: 2, name: "Marie Andersen", email: "marie@example.com", medlemskat: "aktiv" },
-  { id: 3, name: "Peter Nielsen", email: "peter@example.com", medlemskat: "aktiv" },
-  { id: 4, name: "Søren Larsen", email: "soren@example.com", medlemskat: "inaktiv" },
-  { id: 5, name: "Lisa Jensen", email: "lisa@example.com", medlemskat: "aktiv" },
+  { id: 1, name: "Anders Hansen", email: "anders.hansen@example.com", telefon: "40 12 34 56", tilmeldingsdato: "2023-03-15", senessteAktivitet: "2024-11-08", status: "aktiv", udlån: 1, avatar: "👨‍💼" },
+  { id: 2, name: "Marie Andersen", email: "marie.andersen@example.com", telefon: "30 45 67 89", tilmeldingsdato: "2023-05-20", senessteAktivitet: "2024-11-08", status: "aktiv", udlån: 1, avatar: "👩‍💼" },
+  { id: 3, name: "Peter Nielsen", email: "peter.nielsen@example.com", telefon: "20 98 76 54", tilmeldingsdato: "2023-02-10", senessteAktivitet: "2024-11-08", status: "aktiv", udlån: 1, avatar: "👨‍💻" },
+  { id: 4, name: "Søren Larsen", email: "soren.larsen@example.com", telefon: "50 11 22 33", tilmeldingsdato: "2022-11-05", senessteAktivitet: "2024-10-15", status: "inaktiv", udlån: 0, avatar: "👨‍🔧" },
+  { id: 5, name: "Lisa Jensen", email: "lisa.jensen@example.com", telefon: "60 99 88 77", tilmeldingsdato: "2023-07-12", senessteAktivitet: "2024-11-07", status: "aktiv", udlån: 1, avatar: "👩‍🎓" },
+  { id: 6, name: "Thomas Christensen", email: "thomas.christensen@example.com", telefon: "40 55 66 77", tilmeldingsdato: "2024-01-08", senessteAktivitet: "2024-11-06", status: "aktiv", udlån: 1, avatar: "👨‍💼" },
+  { id: 7, name: "Ingrid Østergaard", email: "ingrid.oestergaard@example.com", telefon: "22 33 44 55", tilmeldingsdato: "2023-09-22", senessteAktivitet: "2024-11-08", status: "aktiv", udlån: 1, avatar: "👩‍🏫" },
+  { id: 8, name: "Johannes Møller", email: "johannes.moller@example.com", telefon: "45 77 88 99", tilmeldingsdato: "2023-04-17", senessteAktivitet: "2024-11-05", status: "aktiv", udlån: 1, avatar: "👨‍🎨" },
+  { id: 9, name: "Anna Bergström", email: "anna.bergstrom@example.com", telefon: "38 22 11 44", tilmeldingsdato: "2023-06-30", senessteAktivitet: "2024-11-08", status: "aktiv", udlån: 1, avatar: "👩‍💻" },
+  { id: 10, name: "Rasmus Andersen", email: "rasmus.andersen@example.com", telefon: "55 66 77 88", tilmeldingsdato: "2023-08-14", senessteAktivitet: "2024-11-04", status: "aktiv", udlån: 1, avatar: "👨‍🚀" },
+  { id: 11, name: "Henrik Nielsen", email: "henrik.nielsen@example.com", telefon: "35 42 58 67", tilmeldingsdato: "2024-02-01", senessteAktivitet: "2024-11-08", status: "aktiv", udlån: 2, avatar: "👨‍💡" },
+  { id: 12, name: "Sandra Larsen", email: "sandra.larsen@example.com", telefon: "44 55 66 77", tilmeldingsdato: "2023-10-11", senessteAktivitet: "2024-10-20", status: "inaktiv", udlån: 0, avatar: "👩‍🔬" },
 ];
 
 export const mockActivity = [
