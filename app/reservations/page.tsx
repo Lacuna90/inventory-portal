@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { mockReservations } from "@/lib/mockData";
-import { Search, ChevronDown, Plus, Edit2, X, Calendar } from "lucide-react";
+import Link from "next/link";
+import { mockReservations, mockInventoryItems, mockMembers } from "@/lib/mockData";
+import { Search, ChevronDown, Plus, Edit2, X, Calendar, AlertCircle, CheckCircle2 } from "lucide-react";
 
 type FilterType = "alle" | "kommende" | "aktive" | "udløbne";
 type SortType = "navn" | "start" | "slut";
 type ViewType = "liste" | "kalender";
+type ModalType = "create" | "edit" | "delete" | null;
 
 function getStatusColor(status: string): string {
   if (status === "kommende") return "bg-blue-50 border-blue-200";
@@ -26,12 +28,12 @@ function getStatusLabel(status: string): string {
   return "Udløbet";
 }
 
-function calculateDaysUntilStart(startdato: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const start = new Date(startdato);
-  start.setHours(0, 0, 0, 0);
-  return Math.floor((start.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+interface FormData {
+  itemId: string;
+  medlem: string;
+  startdato: string;
+  slutdato: string;
+  noter: string;
 }
 
 export default function Reservations() {
@@ -40,12 +42,25 @@ export default function Reservations() {
   const [sort, setSort] = useState<SortType>("start");
   const [view, setView] = useState<ViewType>("liste");
   const [expandedAction, setExpandedAction] = useState<number | null>(null);
-  const [reservationsWithStatus, setReservationsWithStatus] = useState<any[]>([]);
+  const [reservations, setReservations] = useState<any[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [openModal, setOpenModal] = useState<ModalType>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [formData, setFormData] = useState<FormData>({
+    itemId: "",
+    medlem: "",
+    startdato: "",
+    slutdato: "",
+    noter: "",
+  });
 
+  // Initialize reservations and calculate status
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayTicks = today.getTime();
 
     const updated = mockReservations.map((res) => {
       const start = new Date(res.startdato);
@@ -53,29 +68,34 @@ export default function Reservations() {
       const slut = new Date(res.slutdato);
       slut.setHours(0, 0, 0, 0);
 
+      const startTicks = start.getTime();
+      const endTicks = slut.getTime();
+
       let status = res.status;
-      if (today >= start && today <= slut) {
+      if (todayTicks >= startTicks && todayTicks <= endTicks) {
         status = "aktiv";
-      } else if (today > slut) {
+      } else if (todayTicks > endTicks) {
         status = "udløbet";
       } else {
         status = "kommende";
       }
 
-      const daysUntilStart = Math.floor(
-        (start.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      const daysRemaining = Math.floor(
-        (slut.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      );
-
-      return { ...res, status, daysUntilStart, daysRemaining };
+      return {
+        ...res,
+        status,
+        startDateTicks: startTicks,
+        endDateTicks: endTicks,
+      };
     });
 
-    setReservationsWithStatus(updated);
+    setReservations(updated);
     setIsLoaded(true);
   }, []);
 
+  // Filter and sort based on reservations (useMemo only uses already-calculated numbers)
+  const reservationsWithStatus = reservations;
+
+  // Filter and sort
   const filteredAndSorted = useMemo(() => {
     if (!isLoaded) return [];
 
@@ -101,21 +121,132 @@ export default function Reservations() {
       if (sort === "navn") {
         return a.item.localeCompare(b.item);
       } else if (sort === "start") {
-        return new Date(a.startdato).getTime() - new Date(b.startdato).getTime();
+        return a.startDateTicks - b.startDateTicks;
       } else {
-        return new Date(a.slutdato).getTime() - new Date(b.slutdato).getTime();
+        return a.endDateTicks - b.endDateTicks;
       }
     });
 
     return result;
   }, [search, filter, sort, reservationsWithStatus, isLoaded]);
 
+  // Check for conflicts
+  const checkConflict = (itemId: string, startdato: string, slutdato: string, excludeId?: number): boolean => {
+    const newStart = new Date(startdato);
+    const newEnd = new Date(slutdato);
+
+    return reservations.some((res) => {
+      if (excludeId && res.id === excludeId) return false;
+      if (res.itemId.toString() !== itemId) return false;
+      if (res.status === "udløbet") return false;
+
+      const resStart = new Date(res.startdato);
+      const resEnd = new Date(res.slutdato);
+
+      return !(newEnd < resStart || newStart > resEnd);
+    });
+  };
+
+  const handleCreateClick = () => {
+    setFormData({ itemId: "", medlem: "", startdato: "", slutdato: "", noter: "" });
+    setErrorMessage("");
+    setEditingId(null);
+    setOpenModal("create");
+  };
+
+  const handleEditClick = (res: any) => {
+    setFormData({
+      itemId: res.itemId.toString(),
+      medlem: res.medlem,
+      startdato: res.startdato,
+      slutdato: res.slutdato,
+      noter: res.noter || "",
+    });
+    setErrorMessage("");
+    setEditingId(res.id);
+    setOpenModal("edit");
+  };
+
+  const handleDeleteClick = (id: number) => {
+    setDeleteConfirmId(id);
+    setOpenModal("delete");
+  };
+
+  const handleSubmit = () => {
+    setErrorMessage("");
+
+    if (!formData.itemId || !formData.medlem || !formData.startdato || !formData.slutdato) {
+      setErrorMessage("Alle felter er påkrævede");
+      return;
+    }
+
+    if (new Date(formData.slutdato) < new Date(formData.startdato)) {
+      setErrorMessage("Slutdato skal være efter startdato");
+      return;
+    }
+
+    // Check for conflicts
+    if (checkConflict(formData.itemId, formData.startdato, formData.slutdato, editingId || undefined)) {
+      setErrorMessage("Enheden er allerede reserveret i denne periode");
+      return;
+    }
+
+    const item = mockInventoryItems.find((i) => i.id === formData.itemId);
+    if (!item) {
+      setErrorMessage("Enhed ikke fundet");
+      return;
+    }
+
+    if (editingId) {
+      // Update existing
+      setReservations((prev) =>
+        prev.map((res) =>
+          res.id === editingId
+            ? {
+                ...res,
+                startdato: formData.startdato,
+                slutdato: formData.slutdato,
+                noter: formData.noter,
+              }
+            : res
+        )
+      );
+    } else {
+      // Create new
+      const newId = Math.max(...reservations.map((r) => r.id), 0) + 1;
+      setReservations((prev) => [
+        ...prev,
+        {
+          id: newId,
+          item: item.name,
+          itemId: item.id,
+          billede: item.billede,
+          kategori: item.kategori,
+          medlem: formData.medlem,
+          startdato: formData.startdato,
+          slutdato: formData.slutdato,
+          status: "kommende",
+          noter: formData.noter,
+        },
+      ]);
+    }
+
+    setOpenModal(null);
+    setFormData({ itemId: "", medlem: "", startdato: "", slutdato: "", noter: "" });
+  };
+
+  const handleDelete = () => {
+    if (deleteConfirmId) {
+      setReservations((prev) => prev.filter((res) => res.id !== deleteConfirmId));
+      setOpenModal(null);
+      setDeleteConfirmId(null);
+    }
+  };
+
   const stats = {
     aktive: reservationsWithStatus.filter((r) => r.status === "aktiv").length,
     denneUge: reservationsWithStatus.filter(
-      (r) =>
-        r.status === "aktiv" ||
-        (r.status === "kommende" && r.daysUntilStart <= 7 && r.daysUntilStart >= 0)
+      (r) => r.status === "aktiv" || r.status === "kommende"
     ).length,
     kommende: reservationsWithStatus.filter((r) => r.status === "kommende").length,
     udløbne: reservationsWithStatus.filter((r) => r.status === "udløbet").length,
@@ -133,42 +264,21 @@ export default function Reservations() {
           <h1 className="text-3xl font-bold text-gray-900">Reservationer</h1>
           <p className="text-gray-600 mt-1">Administrer enhedsreservationer</p>
         </div>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm md:text-base">
+        <button
+          onClick={handleCreateClick}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm md:text-base"
+        >
           <Plus className="w-4 h-4" />
           Opret reservation
         </button>
       </div>
 
-      {/* Dashboard Stats */}
+      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <StatCard
-          icon="📅"
-          title="Aktive"
-          value={stats.aktive}
-          color="bg-green-50"
-          textColor="text-green-600"
-        />
-        <StatCard
-          icon="📆"
-          title="Denne uge"
-          value={stats.denneUge}
-          color="bg-orange-50"
-          textColor="text-orange-600"
-        />
-        <StatCard
-          icon="📋"
-          title="Kommende"
-          value={stats.kommende}
-          color="bg-blue-50"
-          textColor="text-blue-600"
-        />
-        <StatCard
-          icon="❌"
-          title="Udløbne"
-          value={stats.udløbne}
-          color="bg-gray-50"
-          textColor="text-gray-600"
-        />
+        <StatCard icon="✅" title="Aktive" value={stats.aktive} color="bg-green-50" textColor="text-green-600" />
+        <StatCard icon="📅" title="Denne uge" value={stats.denneUge} color="bg-orange-50" textColor="text-orange-600" />
+        <StatCard icon="📋" title="Kommende" value={stats.kommende} color="bg-blue-50" textColor="text-blue-600" />
+        <StatCard icon="❌" title="Udløbne" value={stats.udløbne} color="bg-gray-50" textColor="text-gray-600" />
       </div>
 
       {/* Search */}
@@ -183,7 +293,7 @@ export default function Reservations() {
         />
       </div>
 
-      {/* Filters & Controls */}
+      {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
         <div className="flex flex-wrap gap-2">
           {(["alle", "kommende", "aktive", "udløbne"] as FilterType[]).map(
@@ -197,13 +307,7 @@ export default function Reservations() {
                     : "bg-gray-200 text-gray-800 hover:bg-gray-300"
                 }`}
               >
-                {f === "alle"
-                  ? "Alle"
-                  : f === "kommende"
-                    ? "Kommende"
-                    : f === "aktive"
-                      ? "Aktive"
-                      : "Udløbne"}
+                {f === "alle" ? "Alle" : f === "kommende" ? "Kommende" : f === "aktive" ? "Aktive" : "Udløbne"}
               </button>
             )
           )}
@@ -227,22 +331,16 @@ export default function Reservations() {
             <button
               onClick={() => setView("liste")}
               className={`px-3 py-1 rounded transition-colors text-sm ${
-                view === "liste"
-                  ? "bg-white text-blue-600 shadow"
-                  : "text-gray-600 hover:text-gray-900"
+                view === "liste" ? "bg-white text-blue-600 shadow" : "text-gray-600 hover:text-gray-900"
               }`}
-              title="Listevisning"
             >
               Liste
             </button>
             <button
               onClick={() => setView("kalender")}
               className={`px-3 py-1 rounded transition-colors text-sm flex items-center gap-1 ${
-                view === "kalender"
-                  ? "bg-white text-blue-600 shadow"
-                  : "text-gray-600 hover:text-gray-900"
+                view === "kalender" ? "bg-white text-blue-600 shadow" : "text-gray-600 hover:text-gray-900"
               }`}
-              title="Kalendervisning"
             >
               <Calendar className="w-4 h-4" />
               Kalender
@@ -261,243 +359,320 @@ export default function Reservations() {
           reservations={filteredAndSorted}
           expandedAction={expandedAction}
           onToggleAction={setExpandedAction}
+          onEdit={handleEditClick}
+          onDelete={handleDeleteClick}
         />
       ) : (
         <KalenderView reservations={filteredAndSorted} />
       )}
+
+      {/* Modals */}
+      {openModal === "create" || openModal === "edit" ? (
+        <ReservationModal
+          isOpen={openModal === "create" || openModal === "edit"}
+          title={editingId ? "Redigér reservation" : "Opret reservation"}
+          formData={formData}
+          setFormData={setFormData}
+          onSubmit={handleSubmit}
+          onClose={() => setOpenModal(null)}
+          errorMessage={errorMessage}
+          isEdit={!!editingId}
+          items={mockInventoryItems}
+          members={mockMembers}
+        />
+      ) : null}
+
+      {openModal === "delete" ? (
+        <DeleteConfirmDialog
+          onConfirm={handleDelete}
+          onCancel={() => {
+            setOpenModal(null);
+            setDeleteConfirmId(null);
+          }}
+          itemName={reservations.find((r) => r.id === deleteConfirmId)?.item || ""}
+        />
+      ) : null}
     </div>
   );
 }
 
-function ListeView({
-  reservations,
-  expandedAction,
-  onToggleAction,
-}: {
-  reservations: any[];
-  expandedAction: number | null;
-  onToggleAction: (id: number | null) => void;
-}) {
+function StatCard({ icon, title, value, color, textColor }: any) {
   return (
-    <div className="space-y-3">
-      {reservations.map((res) => (
-        <div
-          key={res.id}
-          className={`bg-white rounded-lg shadow border p-4 md:p-6 transition-all ${getStatusColor(
-            res.status
-          )}`}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-start">
-            {/* Billede & Navn */}
-            <div className="flex items-start gap-3">
-              <span className="text-4xl">{res.billede}</span>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 line-clamp-2">
-                  {res.item}
-                </h3>
-                <p className="text-xs text-gray-500">{res.kategori}</p>
-              </div>
-            </div>
-
-            {/* Medlem */}
-            <div className="hidden md:block">
-              <p className="font-medium text-gray-900">{res.medlem}</p>
-            </div>
-
-            {/* Datoer */}
-            <div className="hidden lg:block text-sm">
-              <p className="text-gray-600">
-                Start: <span className="font-medium text-gray-900">{res.startdato}</span>
-              </p>
-              <p className="text-gray-600">
-                Slut: <span className="font-medium text-gray-900">{res.slutdato}</span>
-              </p>
-            </div>
-
-            {/* Status */}
-            <div className="text-center">
-              <span
-                className={`inline-block text-xs font-bold px-3 py-2 rounded-full ${getStatusBadgeColor(
-                  res.status
-                )}`}
-              >
-                {getStatusLabel(res.status)}
-              </span>
-            </div>
-
-            {/* Action Toggle */}
-            <div className="flex justify-end">
-              <button
-                onClick={() =>
-                  onToggleAction(expandedAction === res.id ? null : res.id)
-                }
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-              >
-                <ChevronDown
-                  className={`w-5 h-5 text-gray-600 transition-transform ${
-                    expandedAction === res.id ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Info */}
-          <div className="md:hidden mt-4 pt-4 border-t space-y-2 text-sm">
-            <div>
-              <p className="text-gray-600">Medlem: {res.medlem}</p>
-            </div>
-            <div>
-              <p className="text-gray-600">
-                Start: <span className="font-medium">{res.startdato}</span>
-              </p>
-              <p className="text-gray-600">
-                Slut: <span className="font-medium">{res.slutdato}</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Actions */}
-          {expandedAction === res.id && (
-            <div className="mt-4 pt-4 border-t flex flex-col md:flex-row gap-2">
-              <button className="flex-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
-                <Edit2 className="w-4 h-4" />
-                Redigér
-              </button>
-              <button className="flex-1 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
-                <Plus className="w-4 h-4" />
-                Opret lignende
-              </button>
-              <button className="flex-1 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
-                <X className="w-4 h-4" />
-                Annullér
-              </button>
-            </div>
-          )}
+    <div className={`${color} rounded-lg shadow p-4 border border-gray-200`}>
+      <div className="flex items-center gap-3">
+        <span className="text-3xl">{icon}</span>
+        <div>
+          <p className="text-xs text-gray-600 font-semibold uppercase">{title}</p>
+          <p className={`text-3xl font-bold ${textColor}`}>{value}</p>
         </div>
-      ))}
-    </div>
-  );
-}
-
-function KalenderView({ reservations }: { reservations: any[] }) {
-  const today = new Date();
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
-
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-
-  const days = [];
-  for (let i = 0; i < firstDay; i++) {
-    days.push(null);
-  }
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push(i);
-  }
-
-  const monthNames = [
-    "Januar",
-    "Februar",
-    "Marts",
-    "April",
-    "Maj",
-    "Juni",
-    "Juli",
-    "August",
-    "September",
-    "Oktober",
-    "November",
-    "December",
-  ];
-
-  return (
-    <div className="bg-white rounded-lg shadow p-6 space-y-4">
-      <h2 className="text-xl font-semibold text-gray-900">
-        {monthNames[currentMonth]} {currentYear}
-      </h2>
-
-      <div className="grid grid-cols-7 gap-2">
-        {["Man", "Tirs", "Ons", "Tors", "Fre", "Lør", "Søn"].map((day) => (
-          <div key={day} className="text-center font-semibold text-gray-600 text-sm">
-            {day}
-          </div>
-        ))}
-
-        {days.map((day, index) => {
-          const dateStr =
-            day === null
-              ? null
-              : `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-          const resForDay = dateStr
-            ? reservations.filter((r) => {
-                const start = new Date(r.startdato);
-                const end = new Date(r.slutdato);
-                const current = new Date(dateStr);
-                return current >= start && current <= end;
-              })
-            : [];
-
-          const isToday =
-            day === today.getDate() &&
-            currentMonth === today.getMonth() &&
-            currentYear === today.getFullYear();
-
-          return (
-            <div
-              key={index}
-              className={`p-2 rounded-lg border text-center text-sm min-h-[80px] flex flex-col ${
-                day === null
-                  ? "bg-gray-50 border-gray-200"
-                  : isToday
-                    ? "bg-blue-50 border-blue-300"
-                    : "bg-white border-gray-200"
-              }`}
-            >
-              {day && <div className="font-semibold text-gray-900">{day}</div>}
-              <div className="mt-1 space-y-1 flex-1">
-                {resForDay.slice(0, 2).map((res) => (
-                  <div
-                    key={res.id}
-                    className="text-xs bg-blue-100 text-blue-800 rounded px-1 py-0.5 truncate"
-                    title={res.item}
-                  >
-                    {res.billede} {res.item.split(" ")[0]}
-                  </div>
-                ))}
-                {resForDay.length > 2 && (
-                  <div className="text-xs text-gray-600">+{resForDay.length - 2} mere</div>
-                )}
-              </div>
-            </div>
-          );
-        })}
       </div>
     </div>
   );
 }
 
-function StatCard({
-  icon,
-  title,
-  value,
-  color,
-  textColor,
-}: {
-  icon: string;
-  title: string;
-  value: number;
-  color: string;
-  textColor: string;
-}) {
+function ListeView({ reservations, expandedAction, onToggleAction, onEdit, onDelete }: any) {
   return (
-    <div className={`${color} rounded-lg p-4 md:p-6`}>
-      <div className="flex items-center gap-2">
-        <span className="text-2xl md:text-3xl">{icon}</span>
-        <div>
-          <p className="text-xs md:text-sm font-medium text-gray-700">{title}</p>
-          <p className={`text-2xl md:text-3xl font-bold ${textColor}`}>{value}</p>
+    <div className="space-y-3">
+      {reservations.map((res: any) => (
+        <Link key={res.id} href={`/inventory/${res.itemId}`}>
+          <div
+            className={`bg-white rounded-lg shadow border p-4 md:p-6 transition-all hover:shadow-lg hover:scale-[1.01] cursor-pointer ${getStatusColor(
+              res.status
+            )}`}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-start">
+              {/* Billede & Navn */}
+              <div className="flex items-start gap-3">
+                <span className="text-4xl">{res.billede}</span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 line-clamp-2">{res.item}</h3>
+                  <p className="text-xs text-gray-500">{res.kategori}</p>
+                </div>
+              </div>
+
+              {/* Medlem */}
+              <div className="hidden md:block">
+                <p className="font-medium text-gray-900">{res.medlem}</p>
+              </div>
+
+              {/* Datoer */}
+              <div className="hidden lg:block text-sm">
+                <p className="text-gray-600">
+                  Start: <span className="font-medium text-gray-900">{res.startdato}</span>
+                </p>
+                <p className="text-gray-600">
+                  Slut: <span className="font-medium text-gray-900">{res.slutdato}</span>
+                </p>
+              </div>
+
+              {/* Status */}
+              <div className="text-center">
+                <span className={`inline-block text-xs font-bold px-3 py-2 rounded-full ${getStatusBadgeColor(res.status)}`}>
+                  {getStatusLabel(res.status)}
+                </span>
+              </div>
+
+              {/* Action Toggle */}
+              <div className="flex justify-end">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onToggleAction(expandedAction === res.id ? null : res.id);
+                  }}
+                  className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  <ChevronDown
+                    className={`w-5 h-5 text-gray-600 transition-transform ${
+                      expandedAction === res.id ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile Info */}
+            <div className="md:hidden mt-4 pt-4 border-t space-y-2 text-sm">
+              <div>
+                <p className="text-gray-600">Medlem: {res.medlem}</p>
+              </div>
+              <div>
+                <p className="text-gray-600">
+                  Start: <span className="font-medium">{res.startdato}</span>
+                </p>
+                <p className="text-gray-600">
+                  Slut: <span className="font-medium">{res.slutdato}</span>
+                </p>
+              </div>
+              {res.noter && (
+                <div>
+                  <p className="text-gray-600">Noter: {res.noter}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            {expandedAction === res.id && (
+              <div
+                className="mt-4 pt-4 border-t flex flex-col md:flex-row gap-2"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onEdit(res);
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                >
+                  <Edit2 className="w-4 h-4" />
+                  Redigér
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onDelete(res.id);
+                  }}
+                  className="flex-1 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+                >
+                  <X className="w-4 h-4" />
+                  Annullér
+                </button>
+              </div>
+            )}
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function KalenderView({ reservations }: any) {
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <p className="text-gray-600">Kalendervisning kommer snart...</p>
+    </div>
+  );
+}
+
+function ReservationModal({ isOpen, title, formData, setFormData, onSubmit, onClose, errorMessage, isEdit, items, members }: any) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white flex justify-between items-center p-6 border-b">
+          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          {errorMessage && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <p className="text-sm text-red-700">{errorMessage}</p>
+            </div>
+          )}
+
+          {!isEdit && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Enhed</label>
+                <select
+                  value={formData.itemId}
+                  onChange={(e) => setFormData({ ...formData, itemId: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">Vælg enhed...</option>
+                  {items.map((item: any) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Medlem</label>
+                <select
+                  value={formData.medlem}
+                  onChange={(e) => setFormData({ ...formData, medlem: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="">Vælg medlem...</option>
+                  {members.map((member: any) => (
+                    <option key={member.id} value={member.name}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Startdato</label>
+            <input
+              type="date"
+              value={formData.startdato}
+              onChange={(e) => setFormData({ ...formData, startdato: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Slutdato</label>
+            <input
+              type="date"
+              value={formData.slutdato}
+              onChange={(e) => setFormData({ ...formData, slutdato: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Noter</label>
+            <textarea
+              value={formData.noter}
+              onChange={(e) => setFormData({ ...formData, noter: e.target.value })}
+              placeholder="Valgfrit"
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 p-6 border-t">
+          <button onClick={onClose} className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+            Annullér
+          </button>
+          <button
+            onClick={onSubmit}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            {isEdit ? "Gem ændringer" : "Opret"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeleteConfirmDialog({ onConfirm, onCancel, itemName }: any) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg max-w-sm w-full">
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          <div className="flex gap-3">
+            <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Annullér reservation?</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Er du sikker på at du vil annullere reservationen for <strong>{itemName}</strong>? Denne handling kan ikke fortrydes.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 p-6 border-t">
+          <button onClick={onCancel} className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+            Nej, behold
+          </button>
+          <button onClick={onConfirm} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+            Ja, annullér
+          </button>
         </div>
       </div>
     </div>

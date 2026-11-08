@@ -2,10 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { mockInventoryItems } from "@/lib/mockData";
-import { Grid, List, Search, X, Plus } from "lucide-react";
+import { mockInventoryItems, kategorier } from "@/lib/mockData";
+import { Search, Plus } from "lucide-react";
+import Link from "next/link";
 
-type ViewType = "card" | "list";
 type StatusFilter = "alle" | "hjemme" | "udlånt" | "reserveret" | "til_salg" | "solgt" | "defekt";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
@@ -19,9 +19,8 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 
 export default function Inventory() {
   const router = useRouter();
-  const [view, setView] = useState<ViewType>("card");
   const [search, setSearch] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<StatusFilter>("alle");
+  const [selectedKategori, setSelectedKategori] = useState<string | null>(null);
 
   const filteredItems = useMemo(() => {
     return mockInventoryItems.filter((item) => {
@@ -30,14 +29,21 @@ export default function Inventory() {
         item.kategori.toLowerCase().includes(search.toLowerCase()) ||
         item.lokation.toLowerCase().includes(search.toLowerCase());
 
-      const matchesStatus =
-        selectedStatus === "alle" || item.status === selectedStatus;
+      const matchesKategori = selectedKategori === null || item.kategori === selectedKategori;
 
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesKategori;
     });
-  }, [search, selectedStatus]);
+  }, [search, selectedKategori]);
 
-  const totalItems = filteredItems.reduce((sum, item) => sum + item.mængde, 0);
+  const itemsByKategori = useMemo(() => {
+    return kategorier.map((k) => ({
+      ...k,
+      count: mockInventoryItems.filter((item) => item.kategori === k.navn).length,
+      items: mockInventoryItems
+        .filter((item) => item.kategori === k.navn)
+        .slice(0, 5),
+    }));
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -56,6 +62,29 @@ export default function Inventory() {
         </button>
       </div>
 
+      {/* Category Overview Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        {itemsByKategori.map((k) => (
+          <button
+            key={k.navn}
+            onClick={() => setSelectedKategori(selectedKategori === k.navn ? null : k.navn)}
+            className={`p-4 rounded-lg border-2 transition-all text-left ${
+              selectedKategori === k.navn
+                ? "border-blue-600 bg-blue-50"
+                : "border-gray-200 bg-white hover:border-gray-300"
+            }`}
+          >
+            <div className="text-3xl mb-2">{k.ikon}</div>
+            <p className="font-semibold text-gray-900 text-sm">{k.navn}</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">{k.count}</p>
+            <p className="text-xs text-gray-500 mt-2">
+              {k.items.slice(0, 2).map((item) => item.name).join(", ")}
+              {k.items.length > 2 ? "..." : ""}
+            </p>
+          </button>
+        ))}
+      </div>
+
       {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -68,181 +97,35 @@ export default function Inventory() {
         />
       </div>
 
-      {/* Filters */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-gray-900">Filtre</h3>
-        <div className="flex flex-wrap gap-2">
-          {(
-            [
-              "alle",
-              "hjemme",
-              "udlånt",
-              "reserveret",
-              "til_salg",
-              "solgt",
-              "defekt",
-            ] as StatusFilter[]
-          ).map((status) => (
-            <button
-              key={status}
-              onClick={() => setSelectedStatus(status)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                selectedStatus === status
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-              }`}
-            >
-              {status === "alle" ? "Alle" : statusLabels[status].label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* View Toggle & Summary */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-800">
-            <span className="font-semibold">{filteredItems.length}</span> genstande (
-            <span className="font-semibold">{totalItems}</span> stk total)
-          </p>
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex gap-2 bg-gray-200 p-1 rounded-lg w-fit">
-          <button
-            onClick={() => setView("card")}
-            className={`p-2 rounded transition-colors ${
-              view === "card"
-                ? "bg-white text-blue-600 shadow"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-            title="Card view"
-          >
-            <Grid className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setView("list")}
-            className={`p-2 rounded transition-colors ${
-              view === "list"
-                ? "bg-white text-blue-600 shadow"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-            title="List view"
-          >
-            <List className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
+      {/* Items Grid */}
       {filteredItems.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <p className="text-gray-600">Ingen genstande fundet</p>
         </div>
-      ) : view === "card" ? (
-        <CardView items={filteredItems} />
       ) : (
-        <ListView items={filteredItems} />
-      )}
-    </div>
-  );
-}
-
-function CardView({ items }: { items: typeof mockInventoryItems }) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {items.map((item) => (
-        <div
-          key={item.id}
-          className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
-        >
-          {/* Image/Icon */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 text-center">
-            <span className="text-5xl">{item.billede}</span>
-          </div>
-
-          {/* Content */}
-          <div className="p-4 space-y-3">
-            <div>
-              <h3 className="font-semibold text-gray-900 line-clamp-2">
-                {item.name}
-              </h3>
-              <p className="text-xs text-gray-500 mt-1">{item.kategori}</p>
-            </div>
-
-            {/* Status Badge */}
-            <div>
-              <span
-                className={`inline-block text-xs font-semibold px-2 py-1 rounded-full ${
-                  statusLabels[item.status].color
-                }`}
-              >
-                {statusLabels[item.status].label}
-              </span>
-            </div>
-
-            {/* Details */}
-            <div className="space-y-2 border-t pt-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Mængde:</span>
-                <span className="font-semibold text-gray-900">{item.mængde} stk</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredItems.map((item) => (
+            <Link
+              key={item.id}
+              href={`/inventory/${item.id}`}
+              className="bg-white rounded-lg shadow hover:shadow-lg hover:scale-105 transition-all overflow-hidden block"
+            >
+              {/* Image/Icon */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-8 text-center">
+                <span className="text-5xl">{item.billede}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Lokation:</span>
-                <span className="font-semibold text-gray-900">{item.lokation}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-green-600">Hjemme: {item.mængdeHjemme}</span>
-                <span className="text-orange-600">Udlånt: {item.mængdeUdlånt}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
-function ListView({ items }: { items: typeof mockInventoryItems }) {
-  return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900">
-                Billede
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900">
-                Navn
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900">
-                Kategori
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-900">
-                Status
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-900">
-                Mængde
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-900">
-                Lokation
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {items.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-center text-2xl">
-                  {item.billede}
-                </td>
-                <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                  {item.name}
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
-                  {item.kategori}
-                </td>
-                <td className="px-4 py-3 text-center">
+              {/* Content */}
+              <div className="p-4 space-y-3">
+                <div>
+                  <h3 className="font-semibold text-gray-900 line-clamp-2">
+                    {item.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">{item.kategori}</p>
+                </div>
+
+                {/* Status Badge */}
+                <div>
                   <span
                     className={`inline-block text-xs font-semibold px-2 py-1 rounded-full ${
                       statusLabels[item.status].color
@@ -250,20 +133,29 @@ function ListView({ items }: { items: typeof mockInventoryItems }) {
                   >
                     {statusLabels[item.status].label}
                   </span>
-                </td>
-                <td className="px-4 py-3 text-center text-sm text-gray-900">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {item.mængde}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
-                  {item.lokation}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </div>
+
+                {/* Details */}
+                <div className="space-y-2 border-t pt-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Mængde:</span>
+                    <span className="font-semibold text-gray-900">{item.mængde} stk</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Lokation:</span>
+                    <span className="font-semibold text-gray-900">{item.lokation}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-green-600">Hjemme: {item.mængdeHjemme}</span>
+                    <span className="text-orange-600">Udlånt: {item.mængdeUdlånt}</span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+

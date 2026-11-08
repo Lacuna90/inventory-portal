@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import Link from "next/link";
 import { mockLoans } from "@/lib/mockData";
 import { Search, ChevronDown, RotateCcw, CheckCircle2, AlertCircle } from "lucide-react";
 
@@ -44,7 +45,7 @@ export default function Loans() {
       const daysLeft = Math.floor(
         (returnDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
       );
-      return { ...loan, daysLeft };
+      return { ...loan, daysLeft, returnDateTicks: returnDate.getTime() };
     });
 
     setLoansWithDaysLeft(updated);
@@ -76,7 +77,7 @@ export default function Loans() {
       if (sort === "navn") {
         return a.item.localeCompare(b.item);
       } else if (sort === "retur") {
-        return new Date(a.til).getTime() - new Date(b.til).getTime();
+        return a.returnDateTicks - b.returnDateTicks;
       } else {
         return a.daysLeft - b.daysLeft;
       }
@@ -214,100 +215,112 @@ function LoanCard({
   onToggle: () => void;
 }) {
   return (
-    <div
-      className={`bg-white rounded-lg shadow border p-4 md:p-6 transition-all ${getStatusColor(
-        loan.daysLeft
-      )}`}
-    >
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-center">
-        {/* Billede & Navn */}
-        <div className="flex items-start gap-3 md:col-span-1">
-          <span className="text-4xl">{loan.billede}</span>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 line-clamp-2">
-              {loan.item}
-            </h3>
-            <p className="text-xs text-gray-500">{loan.kategori}</p>
+    <Link href={`/inventory/${loan.itemId}`}>
+      <div
+        className={`bg-white rounded-lg shadow border p-4 md:p-6 transition-all hover:shadow-lg hover:scale-[1.01] cursor-pointer ${getStatusColor(
+          loan.daysLeft
+        )}`}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-center">
+          {/* Billede & Navn */}
+          <div className="flex items-start gap-3 md:col-span-1">
+            <span className="text-4xl">{loan.billede}</span>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 line-clamp-2">
+                {loan.item}
+              </h3>
+              <p className="text-xs text-gray-500">{loan.kategori}</p>
+            </div>
+          </div>
+
+          {/* Låner Info */}
+          <div className="hidden md:block">
+            <p className="font-medium text-gray-900">{loan.medlem}</p>
+            <p className="text-sm text-gray-600">{loan.telefon}</p>
+          </div>
+
+          {/* Datoer */}
+          <div className="hidden lg:block text-sm">
+            <p className="text-gray-600">
+              Start: <span className="font-medium text-gray-900">{loan.fra}</span>
+            </p>
+            <p className="text-gray-600">
+              Retur: <span className="font-medium text-gray-900">{loan.til}</span>
+            </p>
+          </div>
+
+          {/* Dage tilbage */}
+          <div className="text-center">
+            <span
+              className={`inline-block text-xs font-bold px-3 py-2 rounded-full ${getStatusBadgeColor(
+                loan.daysLeft
+              )}`}
+            >
+              {getStatusLabel(loan.daysLeft)}
+            </span>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggle();
+              }}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+              title="Flere handlinger"
+            >
+              <ChevronDown
+                className={`w-5 h-5 text-gray-600 transition-transform ${
+                  isExpanded ? "rotate-180" : ""
+                }`}
+              />
+            </button>
           </div>
         </div>
 
-        {/* Låner Info */}
-        <div className="hidden md:block">
-          <p className="font-medium text-gray-900">{loan.medlem}</p>
-          <p className="text-sm text-gray-600">{loan.telefon}</p>
+        {/* Mobile Info (visible on mobile) */}
+        <div className="md:hidden mt-4 pt-4 border-t space-y-2 text-sm">
+          <div>
+            <p className="text-gray-600">Låner: {loan.medlem}</p>
+            <p className="text-gray-600">Telefon: {loan.telefon}</p>
+          </div>
+          <div>
+            <p className="text-gray-600">
+              Startdato: <span className="font-medium">{loan.fra}</span>
+            </p>
+            <p className="text-gray-600">
+              Returdato: <span className="font-medium">{loan.til}</span>
+            </p>
+          </div>
         </div>
 
-        {/* Datoer */}
-        <div className="hidden lg:block text-sm">
-          <p className="text-gray-600">
-            Start: <span className="font-medium text-gray-900">{loan.fra}</span>
-          </p>
-          <p className="text-gray-600">
-            Retur: <span className="font-medium text-gray-900">{loan.til}</span>
-          </p>
-        </div>
-
-        {/* Dage tilbage */}
-        <div className="text-center">
-          <span
-            className={`inline-block text-xs font-bold px-3 py-2 rounded-full ${getStatusBadgeColor(
-              loan.daysLeft
-            )}`}
+        {/* Expanded Actions */}
+        {isExpanded && (
+          <div
+            className="mt-4 pt-4 border-t flex flex-col md:flex-row gap-2"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
-            {getStatusLabel(loan.daysLeft)}
-          </span>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2 justify-end">
-          <button
-            onClick={onToggle}
-            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-            title="Flere handlinger"
-          >
-            <ChevronDown
-              className={`w-5 h-5 text-gray-600 transition-transform ${
-                isExpanded ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-        </div>
+            <button className="flex-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              Se detaljer
+            </button>
+            <button className="flex-1 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              Returner enhed
+            </button>
+            <button className="flex-1 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+              <RotateCcw className="w-4 h-4" />
+              Forlæng udlån
+            </button>
+          </div>
+        )}
       </div>
-
-      {/* Mobile Info (visible on mobile) */}
-      <div className="md:hidden mt-4 pt-4 border-t space-y-2 text-sm">
-        <div>
-          <p className="text-gray-600">Låner: {loan.medlem}</p>
-          <p className="text-gray-600">Telefon: {loan.telefon}</p>
-        </div>
-        <div>
-          <p className="text-gray-600">
-            Startdato: <span className="font-medium">{loan.fra}</span>
-          </p>
-          <p className="text-gray-600">
-            Returdato: <span className="font-medium">{loan.til}</span>
-          </p>
-        </div>
-      </div>
-
-      {/* Expanded Actions */}
-      {isExpanded && (
-        <div className="mt-4 pt-4 border-t flex flex-col md:flex-row gap-2">
-          <button className="flex-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            Se detaljer
-          </button>
-          <button className="flex-1 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            Returner enhed
-          </button>
-          <button className="flex-1 px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors text-sm font-medium flex items-center justify-center gap-2">
-            <RotateCcw className="w-4 h-4" />
-            Forlæng udlån
-          </button>
-        </div>
-      )}
-    </div>
+    </Link>
   );
 }
 
